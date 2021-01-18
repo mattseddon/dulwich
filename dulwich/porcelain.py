@@ -1155,15 +1155,19 @@ def get_untracked_paths(frompath, basepath, index, exclude_ignored=False):
     """Get untracked paths.
 
     Args:
-    ;param frompath: Path to walk
+      frompath: Path to walk
       basepath: Path to compare to
       index: Index to check against
       exclude_ignored: Whether to exclude ignored paths
     """
-    ignore_manager = _get_ignore_manager(frompath, exclude_ignored)
+    if exclude_ignored:
+        with open_repo_closing(frompath) as r:
+            ignore_manager = IgnoreFilterManager.from_repo(r)
+    else:
+        ignore_manager = None
 
     for ap, is_dir in _walk_working_dir_paths(frompath, basepath):
-        if (exclude_ignored and
+        if (ignore_manager is not None and
                 ignore_manager.is_ignored(os.path.relpath(ap, frompath))):
             continue
         if not is_dir:
